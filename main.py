@@ -26,6 +26,7 @@ def getConfig(Path):
     ports = readConfig['ports']
     ordenType = readConfig['orden-type']
     orden = readConfig['orden']
+
     loadConfig = [host, ports, timeout, ordenType, orden]
     return loadConfig
 
@@ -39,11 +40,9 @@ def getArgument():
 
 
 def checkFile(path):
+    pathExist = False
     if os.path.exists(path):
         pathExist = True
-    else:
-        pathExist = False
-
     return pathExist
 
 
