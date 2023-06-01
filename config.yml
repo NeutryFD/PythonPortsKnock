@@ -1,6 +1,5 @@
 host: 0.0.0.0
 ports:
   - 2525
-  - 4040
-  - 2325
 timeout: 10
+path: /home/neutry/Desktop/GG

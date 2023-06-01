@@ -4,9 +4,12 @@ import subprocess
 import time
 import yaml
 import threading
+import os
+import signal
+import psutil
+import subprocess
+from multiprocessing import Process
 
-TERMINATE = threading.Event()
-thread_runScript = None
 def getConfig():
     with open('config.yml') as f:
         config = yaml.safe_load(f)
@@ -14,8 +17,9 @@ def getConfig():
     host = config['host']
     timeout = config['timeout']
     ports = config['ports']
+    path = config['path']
 
-    config = [host, ports, timeout]
+    config = [host, ports, timeout,path]
     return config
 
 def knockPort(addr, port):
@@ -44,22 +48,23 @@ def knockPort(addr, port):
     return signal
 
 
-def runScript():
-    while not TERMINATE.is_set():
-        path = "/home/neutry/Desktop/GG"
-        result = subprocess.run(["bash", path], capture_output=True)
-        if result.returncode == 0:
-            print(result.stdout.decode())
-        else:
-            print("error")
-
+def runScript(path):
+    global pid
+    path = path
+    result = subprocess.Popen(["bash", path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    pid = result.pid
+    ouput, err = result.communicate()
+    if result.returncode == 0:
+        print(ouput)
+    else:
+        print(err)
 
 def listenKey(config):
     addr = config[0]
     ports = config[1]
     timeout = config[2]
-
-    is_running = False
+    path = config[3]
+    pidScritp = 0
     while True:
         next = 0
         initTime = time.time()
@@ -70,17 +75,17 @@ def listenKey(config):
             else:
                 break
         if next == len(ports):
-            if is_running and thread_runScript is not None and thread_runScript.is_alive():
-                TERMINATE.set()
-                thread_runScript.join()
-                TERMINATE.clear()
-
-            if not is_running:
-                TERMINATE.clear()
-                thread_runScript = threading.Thread(target=runScript)
+            if pidScritp != 0:
+                os.kill(pidScritp, signal.SIGKILL)
+            else:
+                thread_runScript = Process(target=runScript, args=(path,))
                 thread_runScript.start()
-                is_running = True
-
+                pidP = psutil.Process().pid
+                process = psutil.Process(pidP)
+                childrenProcess = process.children()
+                pidScritp = childrenProcess[0].pid
+                print(pidScritp)
+                print(pidP)
 
 if __name__ == "__main__":
     config = getConfig()
