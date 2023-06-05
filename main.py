@@ -4,7 +4,10 @@ import time
 import yaml
 import psutil
 import subprocess
+import os
 
+STERMINAL = "sudo"
+SERVICE = "service"
 
 def getConfig():
     with open('config.yml') as f:
@@ -46,7 +49,7 @@ def knockPort(addr, port):
 
 
 def serviceCommand(process, toggle):
-    vsftp = subprocess.Popen(["sudo", "service", process, toggle], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    vsftp = subprocess.Popen([STERMINAL, SERVICE, process, toggle], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     err, stdo = vsftp.communicate()
     if vsftp.returncode == 0:
         print("Done")
@@ -61,6 +64,13 @@ def processVerification(processName):
 
     return False
 
+def check_iptables_rule(rule):
+    check = False
+    command = f"sudo iptables -C {rule}"
+    exit_code = os.system(command)
+    if exit_code == 0:
+        check = True
+    return check
 
 def listenKey(config):
     addr = config[0]
@@ -81,9 +91,15 @@ def listenKey(config):
         if next == len(ports):
             if ordenType == "service":
                 if processVerification(orden[0]):
-                    serviceCommand(orden[0], orden[2] )
+                    serviceCommand(orden[0], orden[2])
                 else:
                     serviceCommand(orden[0], orden[1])
+            if ordenType == "iptables":
+                rule = str(orden[0]) + " -p " + str(orden[1]) + " --dport " + str(orden[2]) + " -j " + str(orden[3])
+                if check_iptables_rule(rule):
+                    os.system(STERMINAL + " iptables " + " -D " + rule)
+                else:
+                    os.system(STERMINAL + " iptables " + " -A " + rule)
 
 
 if __name__ == "__main__":

@@ -2,8 +2,16 @@ host: 0.0.0.0
 ports:
   - 2525
 timeout: 10
-orden-type: service
+orden-type: iptables
 orden:
-  - vsftpd
-  - start
-  - stop
+  - INPUT #A/D
+  - tcp   #p
+  - 80    # --dport
+  - DROP  #-j
+
+#sudo iptables -A INPUT -p tcp --dport 80 -j DROP
+#orden-type: service
+#orden:
+  #- vsftpd
+  #- start
+  #- stop
