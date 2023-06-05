@@ -1,14 +1,9 @@
 import select
 import socket
-import subprocess
 import time
 import yaml
-import threading
-import os
-import signal
 import psutil
 import subprocess
-from multiprocessing import Process
 
 def getConfig():
     with open('config.yml') as f:
@@ -17,9 +12,9 @@ def getConfig():
     host = config['host']
     timeout = config['timeout']
     ports = config['ports']
-    path = config['path']
+    process = config['process']
 
-    config = [host, ports, timeout,path]
+    config = [host, ports, timeout,process]
     return config
 
 def knockPort(addr, port):
@@ -47,24 +42,27 @@ def knockPort(addr, port):
 
     return signal
 
-
-def runScript(path):
-    global pid
-    path = path
-    result = subprocess.Popen(["bash", path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    pid = result.pid
-    ouput, err = result.communicate()
-    if result.returncode == 0:
-        print(ouput)
+def vsftpinit(process, toggle):
+    vsftp = subprocess.Popen(["sudo", "service", process, toggle], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    err, stdo = vsftp.communicate()
+    if vsftp.returncode == 0:
+        print("Done")
     else:
-        print(err)
+        print(err.decode())
+
+
+def verificar_vsftpd_en_ejecucion():
+    for proc in psutil.process_iter(['name']):
+        if proc.info['name'] == 'vsftpd':
+            return True
+
+    return False
 
 def listenKey(config):
     addr = config[0]
     ports = config[1]
     timeout = config[2]
-    path = config[3]
-    pidScritp = 0
+    processName = config[3]
     while True:
         next = 0
         initTime = time.time()
@@ -75,17 +73,11 @@ def listenKey(config):
             else:
                 break
         if next == len(ports):
-            if pidScritp != 0:
-                os.kill(pidScritp, signal.SIGKILL)
+            if verificar_vsftpd_en_ejecucion():
+                vsftpinit(processName, "stop")
             else:
-                thread_runScript = Process(target=runScript, args=(path,))
-                thread_runScript.start()
-                pidP = psutil.Process().pid
-                process = psutil.Process(pidP)
-                childrenProcess = process.children()
-                pidScritp = childrenProcess[0].pid
-                print(pidScritp)
-                print(pidP)
+                vsftpinit(processName, "start")
+
 
 if __name__ == "__main__":
     config = getConfig()

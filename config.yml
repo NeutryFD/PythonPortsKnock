@@ -2,4 +2,4 @@ host: 0.0.0.0
 ports:
   - 2525
 timeout: 10
-path: /home/neutry/Desktop/curlt
+process: vsftpd
