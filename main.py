@@ -8,15 +8,15 @@ import subprocess
 
 def getConfig():
     with open('config.yml') as f:
-        config = yaml.safe_load(f)
+        readConfig = yaml.safe_load(f)
 
-    host = config['host']
-    timeout = config['timeout']
-    ports = config['ports']
-    process = config['process']
-
-    config = [host, ports, timeout, process]
-    return config
+    host = readConfig['host']
+    timeout = readConfig['timeout']
+    ports = readConfig['ports']
+    ordenType = readConfig['orden-type']
+    orden = readConfig['orden']
+    loadConfig = [host, ports, timeout, ordenType, orden]
+    return loadConfig
 
 
 def knockPort(addr, port):
@@ -45,7 +45,7 @@ def knockPort(addr, port):
     return signal
 
 
-def vsftpinit(process, toggle):
+def serviceCommand(process, toggle):
     vsftp = subprocess.Popen(["sudo", "service", process, toggle], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     err, stdo = vsftp.communicate()
     if vsftp.returncode == 0:
@@ -66,7 +66,9 @@ def listenKey(config):
     addr = config[0]
     ports = config[1]
     timeout = config[2]
-    processName = config[3]
+    ordenType = config[3]
+    orden = config[4]
+
     while True:
         next = 0
         initTime = time.time()
@@ -77,10 +79,11 @@ def listenKey(config):
             else:
                 break
         if next == len(ports):
-            if processVerification(processName):
-                vsftpinit(processName, "stop")
-            else:
-                vsftpinit(processName, "start")
+            if ordenType == "service":
+                if processVerification(orden[0]):
+                    serviceCommand(orden[0], orden[2] )
+                else:
+                    serviceCommand(orden[0], orden[1])
 
 
 if __name__ == "__main__":

@@ -2,4 +2,8 @@ host: 0.0.0.0
 ports:
   - 2525
 timeout: 10
-process: vsftpd
+orden-type: service
+orden:
+  - vsftpd
+  - start
+  - stop
