@@ -6,11 +6,14 @@ import psutil
 import subprocess
 import os
 import sys
+import logging
+import getpass
+
 
 STERMINAL = "sudo"
 SERVICE = "service"
-
-
+LOGGER = logging.getLogger(__name__)
+USERNAME = getpass.getuser()
 def getConfig(Path):
     with open(Path) as f:
         readConfig = yaml.safe_load(f)
@@ -25,7 +28,6 @@ def getConfig(Path):
 
 
 def getArgument():
-    argument = 0
     if len(sys.argv) > 1:
         argument = sys.argv[1]
     else:
@@ -43,14 +45,12 @@ def knockPort(addr, port):
     except socket.error as e:
         print(e)
     sock.listen(1)
-    print("Monitoring port: ", port, addr)
-
     while cont:
         listo_lectura, _, _ = select.select([sock], [], [], 2)
 
         if listo_lectura:
             conexion, direccion = sock.accept()
-            print("Request from:", direccion)
+            LOGGER.info('Monitoring port: %s - Address: %s - Request from: %s', port, addr, direccion, extra={'username': USERNAME})
             conexion.close()
             sock.close()
             cont = False
@@ -60,19 +60,19 @@ def knockPort(addr, port):
 
 
 def serviceCommand(process, toggle):
-    vsftp = subprocess.Popen([STERMINAL, SERVICE, process, toggle], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    err, stdo = vsftp.communicate()
-    if vsftp.returncode == 0:
-        print("Done")
+    execProcess = subprocess.Popen([STERMINAL, SERVICE, process, toggle], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    err, stdo = execProcess.communicate()
+    if execProcess.returncode == 0:
+        LOGGER.info('Service: %s - Accion: % ', process, toggle, extra={'username': USERNAME})
     else:
-        print(err.decode())
+        messageError = err.decode().strip() if err else "UKNOWM ERROR"
+        LOGGER.error(messageError, extra={'username': USERNAME})
 
 
 def processVerification(processName):
     for proc in psutil.process_iter(['name']):
         if proc.info['name'] == processName:
             return True
-
     return False
 
 
@@ -85,23 +85,30 @@ def check_iptables_rule(rule):
     return check
 
 
-def listenKey(config):
-    addr = config[0]
-    ports = config[1]
-    timeout = config[2]
-    ordenType = config[3]
-    orden = config[4]
+def cheakTime(addr, ports, timeout):
+    cheak = False
+    nextPort = 0
+    initTime = time.time()
+    finaltime = initTime + timeout
+    for port in ports:
+        if knockPort(addr, port) == 1 and time.time() < finaltime:
+            nextPort = nextPort + 1
+        else:
+            break
+    if nextPort == len(ports):
+        cheak = True
+    return cheak
+
+
+def listenKey(configFile):
+    addr = configFile[0]
+    ports = configFile[1]
+    timeout = configFile[2]
+    ordenType = configFile[3]
+    orden = configFile[4]
 
     while True:
-        next = 0
-        initTime = time.time()
-        finaltime = initTime + timeout
-        for port in ports:
-            if knockPort(addr, port) == 1 and time.time() < finaltime:
-                next = next + 1
-            else:
-                break
-        if next == len(ports):
+        if cheakTime(addr, ports, timeout):
             if ordenType == "service":
                 if processVerification(orden[0]):
                     serviceCommand(orden[0], orden[2])
@@ -109,14 +116,27 @@ def listenKey(config):
                     serviceCommand(orden[0], orden[1])
             if ordenType == "iptables":
                 rule = str(orden[0]) + " -p " + str(orden[1]) + " --dport " + str(orden[2]) + " -j " + str(orden[3])
+                LOGGER.info('IPTABLE rule: %s', rule)
                 if check_iptables_rule(rule):
                     os.system(STERMINAL + " iptables " + " -D " + rule)
                 else:
                     os.system(STERMINAL + " iptables " + " -A " + rule)
             if ordenType == "command":
                 os.system(orden[0] + " &")
+                LOGGER.info('Command: %s', orden[0], extra={'username': USERNAME})
+
+
+def setup_Logs():
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    file_handler = logging.FileHandler('logging.log')
+    format_str = '%(asctime)s %(username)s %(levelname)s: %(message)s'
+    formatter = logging.Formatter(format_str)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
 
 if __name__ == "__main__":
+    setup_Logs()
     config = getConfig(getArgument())
     listenKey(config)
