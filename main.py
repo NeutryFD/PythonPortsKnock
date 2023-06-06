@@ -5,12 +5,14 @@ import yaml
 import psutil
 import subprocess
 import os
+import sys
 
 STERMINAL = "sudo"
 SERVICE = "service"
 
-def getConfig():
-    with open('config.yml') as f:
+
+def getConfig(Path):
+    with open(Path) as f:
         readConfig = yaml.safe_load(f)
 
     host = readConfig['host']
@@ -20,6 +22,15 @@ def getConfig():
     orden = readConfig['orden']
     loadConfig = [host, ports, timeout, ordenType, orden]
     return loadConfig
+
+
+def getArgument():
+    argument = 0
+    if len(sys.argv) > 1:
+        argument = sys.argv[1]
+    else:
+        argument = 'config.yml'
+    return argument
 
 
 def knockPort(addr, port):
@@ -64,6 +75,7 @@ def processVerification(processName):
 
     return False
 
+
 def check_iptables_rule(rule):
     check = False
     command = f"sudo iptables -C {rule}"
@@ -71,6 +83,7 @@ def check_iptables_rule(rule):
     if exit_code == 0:
         check = True
     return check
+
 
 def listenKey(config):
     addr = config[0]
@@ -100,8 +113,10 @@ def listenKey(config):
                     os.system(STERMINAL + " iptables " + " -D " + rule)
                 else:
                     os.system(STERMINAL + " iptables " + " -A " + rule)
+            if ordenType == "command":
+                os.system(orden[0] + " &")
 
 
 if __name__ == "__main__":
-    config = getConfig()
+    config = getConfig(getArgument())
     listenKey(config)
