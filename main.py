@@ -78,7 +78,7 @@ def processVerification(processName):
 
 def check_iptables_rule(rule):
     check = False
-    command = f"sudo iptables -C {rule} > /dev/null 2>&1"
+    command = f"sudo iptables -C {rule}"
     exit_code = os.system(command)
     if exit_code == 0:
         check = True
