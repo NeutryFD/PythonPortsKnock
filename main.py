@@ -116,7 +116,7 @@ def listenKey(configFile):
                     serviceCommand(orden[0], orden[1])
             if ordenType == "iptables":
                 rule = str(orden[0]) + " -p " + str(orden[1]) + " --dport " + str(orden[2]) + " -j " + str(orden[3])
-                LOGGER.info('IPTABLE rule: %s', rule)
+                LOGGER.info('IPTABLE rule: %s', rule,extra={'username': USERNAME})
                 if check_iptables_rule(rule):
                     os.system(STERMINAL + " iptables " + " -D " + rule)
                 else:
