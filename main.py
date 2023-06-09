@@ -79,10 +79,11 @@ def processVerification(processName):
 def check_iptables_rule(rule):
     check = False
     command = f"sudo iptables -C {rule}"
-    exit_code = os.system(command)
-    if exit_code == 0:
+    result = subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if result.returncode == 0:
         check = True
     return check
+
 
 
 def cheakTime(addr, ports, timeout):
