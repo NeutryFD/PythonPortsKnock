@@ -16,13 +16,6 @@ SERVICE = "service"
 LOGGER = logging.getLogger(__name__)
 USERNAME = getpass.getuser()
 
-def checkSudo():
-    if os.getuid() == 0:
-        sudo = True
-    else:
-        sudo = False
-    return sudo
-
 
 def getConfig(Path):
     with open(Path) as f:
@@ -176,7 +169,7 @@ if __name__ == "__main__":
     while True:
         try:
             setup_Logs()
-            if checkSudo() and checkFile(getArgument()):
+            if checkFile(getArgument()):
                 config = getConfig(getArgument())
                 listenKey(config)
             else:
