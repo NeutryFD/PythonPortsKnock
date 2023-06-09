@@ -9,11 +9,20 @@ import sys
 import logging
 import getpass
 
-
 STERMINAL = "sudo"
 SERVICE = "service"
 LOGGER = logging.getLogger(__name__)
 USERNAME = getpass.getuser()
+
+
+def checkSudo():
+    if os.getuid() == 0:
+        sudo = True
+    else:
+        sudo = False
+    return sudo
+
+
 def getConfig(Path):
     with open(Path) as f:
         readConfig = yaml.safe_load(f)
@@ -35,6 +44,15 @@ def getArgument():
     return argument
 
 
+def checkFile(path):
+    if os.path.exists(path):
+        pathExist = True
+    else:
+        pathExist = False
+
+    return pathExist
+
+
 def knockPort(addr, port):
     signal = 0
     cont = True
@@ -50,7 +68,8 @@ def knockPort(addr, port):
 
         if listo_lectura:
             conexion, direccion = sock.accept()
-            LOGGER.info('Monitoring port: %s - Address: %s - Request from: %s', port, addr, direccion, extra={'username': USERNAME})
+            LOGGER.info('Monitoring port: %s - Address: %s - Request from: %s', port, addr, direccion,
+                        extra={'username': USERNAME})
             conexion.close()
             sock.close()
             cont = False
@@ -60,7 +79,8 @@ def knockPort(addr, port):
 
 
 def serviceCommand(process, toggle):
-    execProcess = subprocess.Popen([STERMINAL, SERVICE, process, toggle], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    execProcess = subprocess.Popen([STERMINAL, SERVICE, process, toggle], stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
     err, stdo = execProcess.communicate()
     if execProcess.returncode == 0:
         LOGGER.info('Service: %s - Accion: % ', process, toggle, extra={'username': USERNAME})
@@ -85,8 +105,7 @@ def check_iptables_rule(rule):
     return check
 
 
-
-def cheakTime(addr, ports, timeout):
+def checkTime(addr, ports, timeout):
     cheak = False
     nextPort = 0
     initTime = time.time()
@@ -109,7 +128,7 @@ def listenKey(configFile):
     orden = configFile[4]
 
     while True:
-        if cheakTime(addr, ports, timeout):
+        if checkTime(addr, ports, timeout):
             if ordenType == "service":
                 if processVerification(orden[0]):
                     serviceCommand(orden[0], orden[2])
@@ -139,6 +158,9 @@ def setup_Logs():
 
 
 if __name__ == "__main__":
-    setup_Logs()
-    config = getConfig(getArgument())
-    listenKey(config)
+    if checkSudo() and checkFile(getArgument()):
+        setup_Logs()
+        config = getConfig(getArgument())
+        listenKey(config)
+    else:
+        LOGGER.error("NO PRIVIGELES OR CONFILE FILE NOT EXIST", extra={'username': USERNAME})
