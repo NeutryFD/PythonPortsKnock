@@ -158,8 +158,8 @@ def setup_Logs():
 
 
 if __name__ == "__main__":
+    setup_Logs()
     if checkSudo() and checkFile(getArgument()):
-        setup_Logs()
         config = getConfig(getArgument())
         listenKey(config)
     else:
