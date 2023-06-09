@@ -11,7 +11,7 @@ import logging
 import getpass
 import signal
 
-STERMINAL = "sudo"
+SUDO = "sudo"
 SERVICE = "service"
 LOGGER = logging.getLogger(__name__)
 USERNAME = getpass.getuser()
@@ -80,7 +80,7 @@ def knockPort(addr, port):
 
 
 def serviceCommand(process, toggle):
-    execProcess = subprocess.Popen([STERMINAL, SERVICE, process, toggle], stdout=subprocess.PIPE,
+    execProcess = subprocess.Popen([SUDO, SERVICE, process, toggle], stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
     err, stdo = execProcess.communicate()
     if execProcess.returncode == 0:
@@ -138,20 +138,29 @@ def listenKey(configFile):
             if ordenType == "iptables":
                 rule = str(orden[0]) + " -p " + str(orden[1]) + " --dport " + str(orden[2]) + " -j " + str(orden[3])
                 if check_iptables_rule(rule):
-                    os.system(STERMINAL + " iptables " + " -D " + rule)
+                    os.system(SUDO + " iptables " + " -D " + rule)
                     LOGGER.info('IPTABLE rule DELETE: %s', rule, extra={'username': USERNAME})
                 else:
-                    os.system(STERMINAL + " iptables " + " -A " + rule)
+                    os.system(SUDO + " iptables " + " -A " + rule)
                     LOGGER.info('IPTABLE rule ADD: %s', rule, extra={'username': USERNAME})
             if ordenType == "command":
                 os.system(orden[0] + " &")
                 LOGGER.info('Command: %s', orden[0], extra={'username': USERNAME})
 
 
+def checkPathLog():
+    pathlog = '/var/log/knockport.log'
+    if not os.path.exists(pathlog):
+        with open(pathlog, 'w'):
+            pass
+    return pathlog
+
+
 def setup_Logs():
+    pathLog = checkPathLog()
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
-    file_handler = logging.FileHandler('logging.log')
+    file_handler = logging.FileHandler(pathLog)
     format_str = '%(asctime)s %(username)s %(levelname)s: %(message)s'
     formatter = logging.Formatter(format_str)
     file_handler.setFormatter(formatter)
