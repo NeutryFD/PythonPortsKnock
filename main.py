@@ -78,7 +78,7 @@ def processVerification(processName):
 
 def check_iptables_rule(rule):
     check = False
-    command = f"sudo iptables -C {rule}"
+    command = f"sudo iptables -C {rule} > /dev/null 2>&1"
     exit_code = os.system(command)
     if exit_code == 0:
         check = True
@@ -116,11 +116,12 @@ def listenKey(configFile):
                     serviceCommand(orden[0], orden[1])
             if ordenType == "iptables":
                 rule = str(orden[0]) + " -p " + str(orden[1]) + " --dport " + str(orden[2]) + " -j " + str(orden[3])
-                LOGGER.info('IPTABLE rule: %s', rule,extra={'username': USERNAME})
                 if check_iptables_rule(rule):
                     os.system(STERMINAL + " iptables " + " -D " + rule)
+                    LOGGER.info('IPTABLE rule DELETE: %s', rule, extra={'username': USERNAME})
                 else:
                     os.system(STERMINAL + " iptables " + " -A " + rule)
+                    LOGGER.info('IPTABLE rule ADD: %s', rule, extra={'username': USERNAME})
             if ordenType == "command":
                 os.system(orden[0] + " &")
                 LOGGER.info('Command: %s', orden[0], extra={'username': USERNAME})
