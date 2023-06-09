@@ -9,12 +9,12 @@ import os
 import sys
 import logging
 import getpass
+import signal
 
 STERMINAL = "sudo"
 SERVICE = "service"
 LOGGER = logging.getLogger(__name__)
 USERNAME = getpass.getuser()
-
 
 def checkSudo():
     if os.getuid() == 0:
@@ -158,10 +158,20 @@ def setup_Logs():
     logger.addHandler(file_handler)
 
 
+def stopScript(signal, frame):
+    sys.exit(0)
+
+
 if __name__ == "__main__":
-    setup_Logs()
-    if checkSudo() and checkFile(getArgument()):
-        config = getConfig(getArgument())
-        listenKey(config)
-    else:
-        LOGGER.error("NO PRIVIGELES OR CONFILE FILE NOT EXIST", extra={'username': USERNAME})
+    signal.signal(signal.SIGINT, stopScript)
+    while True:
+        try:
+            setup_Logs()
+            if checkSudo() and checkFile(getArgument()):
+                config = getConfig(getArgument())
+                listenKey(config)
+            else:
+                LOGGER.error("NO PRIVIGELES OR CONFILE FILE NOT EXIST", extra={'username': USERNAME})
+                break
+        except KeyboardInterrupt:
+            stopScript(None, None)
