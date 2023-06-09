@@ -149,7 +149,7 @@ def listenKey(configFile):
 
 
 def checkPathLog():
-    pathlog = '/var/log/knockport.log'
+    pathlog = '/var/log/knockport/knockport.log'
     if not os.path.exists(pathlog):
         with open(pathlog, 'w'):
             pass
