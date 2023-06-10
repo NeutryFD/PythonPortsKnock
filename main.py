@@ -173,7 +173,7 @@ if __name__ == "__main__":
                 config = getConfig(getArgument())
                 listenKey(config)
             else:
-                LOGGER.error("NO PRIVIGELES OR CONFILE FILE NOT EXIST", extra={'username': USERNAME})
+                LOGGER.error("NO PRIVIGELES OR CONFIGURE FILE NOT EXIST", extra={'username': USERNAME})
                 break
         except KeyboardInterrupt:
             stopScript(None, None)
