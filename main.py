@@ -142,8 +142,12 @@ def listenKey(configFile):
 
 
 def checkPathLog():
-    pathlog = '/var/log/knockport/knockport.log'
-    if not os.path.exists(pathlog):
+    pathlog = '/home/' + USERNAME +'/knockport/knockport.log'
+    if os.path.exists(pathlog):
+        with open(pathlog, 'w'):
+            pass
+    else:
+        os.mkdir('/home/' + USERNAME + '/knockport')
         with open(pathlog, 'w'):
             pass
     return pathlog
